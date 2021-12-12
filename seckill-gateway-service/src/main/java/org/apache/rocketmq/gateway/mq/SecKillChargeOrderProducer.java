@@ -30,21 +30,13 @@ public class SecKillChargeOrderProducer {
     @Autowired
     MQNamesrvConfig namesrvConfig;
 
-    @Value("${rocketmq.acl.accesskey}")
-    String aclAccessKey;
-
-    @Value("${rocketmq.acl.accessSecret}")
-    String aclAccessSecret;
-
 
     private DefaultMQProducer defaultMQProducer;
 
     @PostConstruct
     public void init() {
         defaultMQProducer =
-                new DefaultMQProducer
-                        (MessageProtocolConst.SECKILL_CHARGE_ORDER_TOPIC.getProducerGroup(),
-                                new AclClientRPCHook(new SessionCredentials(aclAccessKey, aclAccessSecret)));
+                new DefaultMQProducer(MessageProtocolConst.SECKILL_CHARGE_ORDER_TOPIC.getProducerGroup());
         defaultMQProducer.setNamesrvAddr(namesrvConfig.nameSrvAddr());
         // 发送失败重试次数
         defaultMQProducer.setRetryTimesWhenSendFailed(3);

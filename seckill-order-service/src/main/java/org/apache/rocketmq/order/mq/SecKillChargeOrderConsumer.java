@@ -35,11 +35,6 @@ public class SecKillChargeOrderConsumer {
     @Autowired
     MQNamesrvConfig namesrvConfig;
 
-    @Value("${rocketmq.acl.accesskey}")
-    String aclAccessKey;
-
-    @Value("${rocketmq.acl.accessSecret}")
-    String aclAccessSecret;
 
     private DefaultMQPushConsumer defaultMQPushConsumer;
 
@@ -50,10 +45,7 @@ public class SecKillChargeOrderConsumer {
     public void init() {
         defaultMQPushConsumer =
                 new DefaultMQPushConsumer(
-                    MessageProtocolConst.SECKILL_CHARGE_ORDER_TOPIC.getConsumerGroup(),
-                        new AclClientRPCHook(new SessionCredentials(aclAccessKey, aclAccessSecret)),
-                        // 平均分配队列算法，hash
-                        new AllocateMessageQueueAveragely());
+                    MessageProtocolConst.SECKILL_CHARGE_ORDER_TOPIC.getConsumerGroup());
         defaultMQPushConsumer.setNamesrvAddr(namesrvConfig.nameSrvAddr());
         // 从头开始消费
         defaultMQPushConsumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);

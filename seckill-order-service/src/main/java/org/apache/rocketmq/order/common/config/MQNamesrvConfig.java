@@ -21,7 +21,7 @@ public class MQNamesrvConfig {
     String aliyunNamesrv;
 
     public String nameSrvAddr() {
-        String envType = System.getProperty("envType");
+        String envType = "offline";
         System.out.println(envType);
         if (StringUtils.isBlank(envType)) {
             throw new IllegalArgumentException("please insert envType");
