@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author snowalker
@@ -57,10 +59,10 @@ public class SecKillProductServiceImpl implements SecKillProductService {
      */
     @Override
     public boolean decreaseProdStock(String prodId) {
-        boolean retryFlag= true;
-        int retryTimes = 1;
+        AtomicBoolean retryFlag= new AtomicBoolean(true);
+        AtomicInteger retryTimes = new AtomicInteger(1);
         int currentProdStock = 0;
-        while (retryFlag) {
+        while (retryFlag.get()) {
             SecKillProductDobj productDobj = querySecKillProductByProdId(prodId);
             // 取库存
             currentProdStock = productDobj.getProdStock();
@@ -72,7 +74,7 @@ public class SecKillProductServiceImpl implements SecKillProductService {
             try {
                 // 更新操作
                 updateCount = secKillProductMapper.decreaseProdStock(productDO);
-                retryFlag = false;
+                retryFlag.set(false);
             } catch (Exception e) {
                 LOGGER.error("[decreaseProdStock]prodId={},商品减库存[异常],事务回滚,重试中,e={}", prodId,
                         LogExceptionWapper.getStackTrace(e));
@@ -80,11 +82,11 @@ public class SecKillProductServiceImpl implements SecKillProductService {
             if (updateCount != 1) {
                 LOGGER.error("[decreaseProdStock]prodId={},商品减库存[失败],事务回滚, 重试中", prodId);
             }
-            if (retryTimes > 3) {
+            if (retryTimes.get() > 3) {
                 LOGGER.info("超过重试次数,商品减库存[失败]");
                 break;
             }
-            retryTimes++;
+            retryTimes.incrementAndGet();
         }
         LOGGER.info("[decreaseProdStock]当前减库存[成功],prodId={},剩余库存={}", prodId, currentProdStock-1);
         return true;
