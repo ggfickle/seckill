@@ -40,7 +40,7 @@ public class SecKillProductConfig implements InitializingBean {
         if (killProductList == null) {
             throw new RuntimeException("请确保数据库中存在秒杀商品配置!");
         }
-        killProductList.stream().forEach((secKillProductDobj -> {
+        killProductList.forEach((secKillProductDobj -> {
             String prodId = secKillProductDobj.getProdId();
             redisTemplate.opsForValue().set(prodId, secKillProductDobj, 86400, TimeUnit.SECONDS);
         }));

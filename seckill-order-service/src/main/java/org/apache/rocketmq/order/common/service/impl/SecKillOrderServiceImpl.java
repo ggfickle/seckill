@@ -17,6 +17,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -127,7 +128,7 @@ public class SecKillOrderServiceImpl implements SecKillOrderService {
         try {
             List<OrderInfoDobj> orderInfoDobjs = secKillOrderMapper.queryOrderInfoByCond(orderInfoDO);
             LOGGER.info("[queryOrder]-orderInfoDobjs={}", orderInfoDobjs);
-            if (orderInfoDobjs == null || orderInfoDobjs.size() <= 0) {
+            if (CollectionUtils.isEmpty(orderInfoDobjs)) {
                 return Result.error(CodeMsg.BIZ_ERROR);
             }
             orderInfo = orderInfoDobjs.get(0);

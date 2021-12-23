@@ -57,29 +57,34 @@ public class SecKillProductServiceImpl implements SecKillProductService {
      */
     @Override
     public boolean decreaseProdStock(String prodId) {
-
-        SecKillProductDobj productDobj = querySecKillProductByProdId(prodId);
-        // 取库存
-        int currentProdStock = productDobj.getProdStock();
-        // 取版本号
-        int beforeVersion = productDobj.getVersion();
-        SecKillProductDO productDO = new SecKillProductDO();
-        productDO.setProdId(prodId).setVersion(beforeVersion);
-        int updateCount = 0;
-        try {
-            // 更新操作
-            updateCount = secKillProductMapper.decreaseProdStock(productDO);
-        } catch (Exception e) {
-            LOGGER.error("[decreaseProdStock]prodId={},商品减库存[异常],事务回滚,e={}", prodId, LogExceptionWapper.getStackTrace(e));
-            String message =
-                    String.format("[decreaseProdStock]prodId=%s,商品减库存[异常],事务回滚", prodId);
-            throw new RuntimeException(message);
-        }
-        if (updateCount != 1) {
-            LOGGER.error("[decreaseProdStock]prodId={},商品减库存[失败],事务回滚,e={}", prodId);
-            String message =
-                    String.format("[decreaseProdStock]prodId=%s,商品减库存[失败],事务回滚", prodId);
-            throw new RuntimeException(message);
+        boolean retryFlag= true;
+        int retryTimes = 1;
+        int currentProdStock = 0;
+        while (retryFlag) {
+            SecKillProductDobj productDobj = querySecKillProductByProdId(prodId);
+            // 取库存
+            currentProdStock = productDobj.getProdStock();
+            // 取版本号
+            int beforeVersion = productDobj.getVersion();
+            SecKillProductDO productDO = new SecKillProductDO();
+            productDO.setProdId(prodId).setVersion(beforeVersion);
+            int updateCount = 0;
+            try {
+                // 更新操作
+                updateCount = secKillProductMapper.decreaseProdStock(productDO);
+                retryFlag = false;
+            } catch (Exception e) {
+                LOGGER.error("[decreaseProdStock]prodId={},商品减库存[异常],事务回滚,重试中,e={}", prodId,
+                        LogExceptionWapper.getStackTrace(e));
+            }
+            if (updateCount != 1) {
+                LOGGER.error("[decreaseProdStock]prodId={},商品减库存[失败],事务回滚, 重试中", prodId);
+            }
+            if (retryTimes > 3) {
+                LOGGER.info("超过重试次数,商品减库存[失败]");
+                break;
+            }
+            retryTimes++;
         }
         LOGGER.info("[decreaseProdStock]当前减库存[成功],prodId={},剩余库存={}", prodId, currentProdStock-1);
         return true;

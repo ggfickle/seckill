@@ -50,12 +50,12 @@ public class OrderQueryManager {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         // 2. 设置请求参数
-        MultiValueMap<String, String> requestParam= new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> requestParam= new LinkedMultiValueMap<>();
         requestParam.add("userPhoneNum", userPhoneNum);
         requestParam.add("prodId", prodId);
-        LOGGER.info("请求远端查单地址:{}, 下单入参:{}", queryUrl, requestParam.toString());
+        LOGGER.info("请求远端查单地址:{}, 下单入参:{}", queryUrl, requestParam);
         // 3. 请求开始
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<MultiValueMap<String, String>>(requestParam, headers);
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(requestParam, headers);
         ResponseEntity<String> queryResponse = restTemplate.exchange(
                 queryUrl, HttpMethod.POST, requestEntity, String.class);
         // 4. 返回参校验
