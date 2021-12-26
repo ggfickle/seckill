@@ -25,6 +25,18 @@
         <guava-version>26.0-jre</guava-version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>maven_reo</id>
+            <!-- 格式是 https://raw.github.com/[github 用户名]/[github 仓库名]/[分支名] -->
+            <url>https://raw.github.com/ggfickle/maven_reo/release</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </releases>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
