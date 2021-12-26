@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -58,6 +60,7 @@ public class SecKillOrderServiceImpl implements SecKillOrderService {
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @Retryable(value = RuntimeException.class, maxAttempts = 50, backoff = @Backoff(value = 0L, multiplier = 1))
     public boolean chargeSecKillOrder(OrderInfoDO orderInfoDO) {
         int insertCount = 0;
         String orderId = orderInfoDO.getOrderId();

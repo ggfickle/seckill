@@ -8,6 +8,7 @@ import org.apache.rocketmq.order.common.util.LogExceptionWapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class SecKillProductServiceImpl implements SecKillProductService {
 
     /**
      * 获取秒杀商品列表
+     *
      * @return
      */
     @Override
@@ -41,6 +43,7 @@ public class SecKillProductServiceImpl implements SecKillProductService {
 
     /**
      * 根据商品id查询产品明细
+     *
      * @param prodId
      * @return
      */
@@ -54,39 +57,34 @@ public class SecKillProductServiceImpl implements SecKillProductService {
 
     /**
      * 减库存,基于乐观锁
+     *
      * @param prodId
      * @return
      */
     @Override
     public boolean decreaseProdStock(String prodId) {
-        AtomicBoolean retryFlag= new AtomicBoolean(true);
-        AtomicInteger retryTimes = new AtomicInteger(1);
-        int currentProdStock = 0;
-        while (retryFlag.get()) {
-            SecKillProductDobj productDobj = querySecKillProductByProdId(prodId);
-            // 取库存
-            currentProdStock = productDobj.getProdStock();
-            // 取版本号
-            int beforeVersion = productDobj.getVersion();
-            SecKillProductDO productDO = new SecKillProductDO();
-            productDO.setProdId(prodId).setVersion(beforeVersion);
-            int updateCount = 0;
-            try {
-                // 更新操作
-                updateCount = secKillProductMapper.decreaseProdStock(productDO);
-                retryFlag.set(false);
-            } catch (Exception e) {
-                LOGGER.error("[decreaseProdStock]prodId={},商品减库存[异常],事务回滚,重试中,e={}", prodId,
-                        LogExceptionWapper.getStackTrace(e));
-            }
-            if (updateCount != 1) {
-                LOGGER.error("[decreaseProdStock]prodId={},商品减库存[失败],事务回滚, 重试中", prodId);
-            }
-            if (retryTimes.get() > 3) {
-                LOGGER.info("超过重试次数,商品减库存[失败]");
-                break;
-            }
-            retryTimes.incrementAndGet();
+        SecKillProductDobj productDobj = querySecKillProductByProdId(prodId);
+        // 取库存
+        int currentProdStock = productDobj.getProdStock();
+        // 取版本号
+        int beforeVersion = productDobj.getVersion();
+        SecKillProductDO productDO = new SecKillProductDO();
+        productDO.setProdId(prodId).setVersion(beforeVersion);
+        int updateCount;
+        try {
+            // 更新操作
+            updateCount = secKillProductMapper.decreaseProdStock(productDO);
+        } catch (Exception e) {
+            LOGGER.error("[decreaseProdStock]prodId={},商品减库存[异常],事务回滚,e={}", prodId, LogExceptionWapper.getStackTrace(e));
+            String message =
+                    String.format("[decreaseProdStock]prodId=%s,商品减库存[异常],事务回滚", prodId);
+            throw new RuntimeException(message);
+        }
+        if (updateCount != 1) {
+            LOGGER.error("[decreaseProdStock]prodId={},商品减库存[失败],事务回滚", prodId);
+            String message =
+                    String.format("[decreaseProdStock]prodId=%s,商品减库存[失败],事务回滚", prodId);
+            throw new RuntimeException(message);
         }
         LOGGER.info("[decreaseProdStock]当前减库存[成功],prodId={},剩余库存={}", prodId, currentProdStock-1);
         return true;
